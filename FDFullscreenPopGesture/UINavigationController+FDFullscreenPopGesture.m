@@ -149,10 +149,49 @@ typedef void (^_FDViewControllerWillAppearInjectBlock)(UIViewController *viewCon
         } else {
             method_exchangeImplementations(originalMethod, swizzledMethod);
         }
+        
+        // Inject "-setViewControllers:animated:"
+        SEL originalSetSelector = @selector(setViewControllers:animated:);
+        SEL swizzledSetSelector = @selector(fd_setViewControllers:animated:);
+        
+        Method originalSetMethod = class_getInstanceMethod(class, originalSelector);
+        Method swizzledSetMethod = class_getInstanceMethod(class, swizzledSelector);
+        
+        success = class_addMethod(class, originalSetSelector, method_getImplementation(swizzledSetMethod), method_getTypeEncoding(swizzledSetMethod));
+        if (success) {
+            class_replaceMethod(class, swizzledSetSelector, method_getImplementation(originalSetMethod), method_getTypeEncoding(originalSetMethod));
+        } else {
+            method_exchangeImplementations(originalSetMethod, swizzledSetMethod);
+        }
     });
 }
 
 - (void)fd_pushViewController:(UIViewController *)viewController animated:(BOOL)animated
+{
+    [self fd_addFullscreenPopGestureRecognizer];
+    
+    // Handle perferred navigation bar appearance.
+    [self fd_setupViewControllerBasedNavigationBarAppearanceIfNeeded:viewController];
+    
+    // Forward to primary implementation.
+    if (![self.viewControllers containsObject:viewController]) {
+        [self fd_pushViewController:viewController animated:animated];
+    }
+}
+
+- (void)fd_setViewControllers:(NSArray<UIViewController *> *)viewControllers animated:(BOOL)animated
+{
+    [self fd_addFullscreenPopGestureRecognizer];
+    
+    // Handle perferred navigation bar appearance.
+    for (UIViewController *viewController in viewControllers) {
+        [self fd_setupViewControllerBasedNavigationBarAppearanceIfNeeded:viewController];
+    }
+    
+    [self fd_setViewControllers:viewControllers animated:animated];
+}
+
+- (void)fd_addFullscreenPopGestureRecognizer
 {
     if (![self.interactivePopGestureRecognizer.view.gestureRecognizers containsObject:self.fd_fullscreenPopGestureRecognizer]) {
         
@@ -168,14 +207,6 @@ typedef void (^_FDViewControllerWillAppearInjectBlock)(UIViewController *viewCon
         
         // Disable the onboard gesture recognizer.
         self.interactivePopGestureRecognizer.enabled = NO;
-    }
-    
-    // Handle perferred navigation bar appearance.
-    [self fd_setupViewControllerBasedNavigationBarAppearanceIfNeeded:viewController];
-    
-    // Forward to primary implementation.
-    if (![self.viewControllers containsObject:viewController]) {
-        [self fd_pushViewController:viewController animated:animated];
     }
 }
 
