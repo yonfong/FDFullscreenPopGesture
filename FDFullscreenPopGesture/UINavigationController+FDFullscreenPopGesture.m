@@ -154,8 +154,8 @@ typedef void (^_FDViewControllerWillAppearInjectBlock)(UIViewController *viewCon
         SEL originalSetSelector = @selector(setViewControllers:animated:);
         SEL swizzledSetSelector = @selector(fd_setViewControllers:animated:);
         
-        Method originalSetMethod = class_getInstanceMethod(class, originalSelector);
-        Method swizzledSetMethod = class_getInstanceMethod(class, swizzledSelector);
+        Method originalSetMethod = class_getInstanceMethod(class, originalSetSelector);
+        Method swizzledSetMethod = class_getInstanceMethod(class, swizzledSetSelector);
         
         success = class_addMethod(class, originalSetSelector, method_getImplementation(swizzledSetMethod), method_getTypeEncoding(swizzledSetMethod));
         if (success) {
