@@ -100,17 +100,17 @@ typedef void (^_FDViewControllerWillAppearInjectBlock)(UIViewController *viewCon
     
     if (self.fd_willAppearInjectBlock) {
         self.fd_willAppearInjectBlock(self, animated);
+    } else {
+        //设置导航的显示/隐藏
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(CGFLOAT_MIN * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            UIViewController *viewController = [self.navigationController.viewControllers lastObject];
+            if (viewController.fd_prefersNavigationBarHidden) {
+                [self.navigationController setNavigationBarHidden:YES animated:NO];
+            } else {
+                [self.navigationController setNavigationBarHidden:NO animated:NO];
+            }
+        });
     }
-    
-    //设置导航的显示/隐藏
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(CGFLOAT_MIN * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        UIViewController *vc = [self.navigationController.viewControllers lastObject];
-        if (vc.fd_prefersNavigationBarHidden) {
-            [self.navigationController setNavigationBarHidden:YES animated:NO];
-        } else {
-            [self.navigationController setNavigationBarHidden:NO animated:NO];
-        }
-    });
 }
 
 - (void)fd_viewWillDisappear:(BOOL)animated
@@ -120,10 +120,8 @@ typedef void (^_FDViewControllerWillAppearInjectBlock)(UIViewController *viewCon
     
     //设置导航的显示/隐藏
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(CGFLOAT_MIN * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        UIViewController *vc = [self.navigationController.viewControllers lastObject];
-        if (vc.fd_prefersNavigationBarHidden) {
-            [self.navigationController setNavigationBarHidden:YES animated:NO];
-        } else {
+        UIViewController *viewController = [self.navigationController.viewControllers lastObject];
+        if (viewController && !viewController.fd_prefersNavigationBarHidden)  {
             [self.navigationController setNavigationBarHidden:NO animated:NO];
         }
     });
